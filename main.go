@@ -8,20 +8,26 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+var logger *log.Logger
+
 func main() {
+	if len(os.Args) != 2 {
+		log.Fatal("No log file specified")
+	}
+
+	f, err := os.OpenFile(os.Args[1], os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Fatalf("Failed to obtain log file %s\n", err)
+	}
+	defer f.Close()
+	logger = log.New(f, "container-demo ", log.LstdFlags)
+
 	r := gin.Default()
 	r.POST("/greet", greetHandler)
 	r.Run(":8086")
 }
 
 func greetHandler(c *gin.Context) {
-	f, err := os.OpenFile("text.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Println(err)
-	}
-	defer f.Close()
-	logger := log.New(f, "prefix", log.LstdFlags)
-
 	var json HttpReq
 	if err := c.ShouldBindJSON(&json); err != nil {
 		logger.Printf("Error occurred while parsing json %s\n", err)
